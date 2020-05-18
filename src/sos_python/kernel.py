@@ -16,6 +16,7 @@ from collections import Sized, KeysView, Sequence
 from types import ModuleType
 import pydoc
 import pickle
+import json
 
 def __version_info__(module):
     # return the version of Python module
@@ -168,7 +169,7 @@ class sos_Python:
                     short_repr(item)))
             return {}
 
-    def put_vars(self, items, to_kernel=None):
+    def put_vars(self, items, to_kernel=None, as_type=None):
         stmt = '__vars__={{ {} }}\n__vars__.update({{x:y for x,y in locals().items() if x.startswith("sos")}})\npickle.dumps(__vars__)'.format(
             ','.join('"{0}":{0}'.format(x) for x in items))
         try:

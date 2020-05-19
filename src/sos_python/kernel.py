@@ -3,7 +3,7 @@
 # Copyright (c) Bo Peng and the University of Texas MD Anderson Cancer Center
 # Distributed under the terms of the 3-clause BSD License.
 
-import pickle
+import pickle, json
 from sos.utils import short_repr, env
 from sos.eval import interpolate
 
@@ -168,7 +168,12 @@ class sos_Python:
                 'Cannot restore from result of pickle.dumps: {}'.format(
                     short_repr(item)))
             return {}
-
+    def convert_to_json(self,varName, values):
+        jsonStr = json.dumps(values)
+        if not jsonStr.startswith('{'):
+            jsonStr = '"{\\"value\\":'+jsonStr.replace('"','\\"')+'}"'
+        return f'JsonObject {varName} = parseJsonString({jsonStr});'
+        
     def put_vars(self, items, to_kernel=None, as_type=None):
         stmt = '__vars__={{ {} }}\n__vars__.update({{x:y for x,y in locals().items() if x.startswith("sos")}})\npickle.dumps(__vars__)'.format(
             ','.join('"{0}":{0}'.format(x) for x in items))
@@ -185,6 +190,16 @@ class sos_Python:
             # to self, this should allow all variables to be passed
             return 'import pickle;globals().update(pickle.loads({}))'.format(
                 response['data']['text/plain'])
+        elif to_kernel == 'Java' or to_kernel == 'java':
+            javaCmd = ''
+            if as_type == 'json':
+                pythonVars = self.load_pickled(eval(response['data']['text/plain']))
+                try:
+                    for varName in pythonVars:
+                        javaCmd += self.convert_to_json(varName, pythonVars[varName])
+                except Exception as e:
+                    self.sos_kernel.warn(f'Exception occurred when transferring `{varName}` from Python to {to_kernel}. {e.__str__()}')
+                return javaCmd
         try:
             ret = self.load_pickled(eval(response['data']['text/plain']))
             if self.sos_kernel._debug_mode:

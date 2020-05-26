@@ -190,7 +190,8 @@ class sos_Python:
             # to self, this should allow all variables to be passed
             return 'import pickle;globals().update(pickle.loads({}))'.format(
                 response['data']['text/plain'])
-        elif to_kernel == 'Java' or to_kernel == 'java':
+
+        if to_kernel in ('Java', 'java', 'JAVA'):
             javaCmd = ''
             if as_type == 'json':
                 pythonVars = self.load_pickled(eval(response['data']['text/plain']))
@@ -200,6 +201,7 @@ class sos_Python:
                 except Exception as e:
                     self.sos_kernel.warn(f'Exception occurred when transferring `{varName}` from Python to {to_kernel}. {e.__str__()}')
                 return javaCmd
+        # Other kernels
         try:
             ret = self.load_pickled(eval(response['data']['text/plain']))
             if self.sos_kernel._debug_mode:

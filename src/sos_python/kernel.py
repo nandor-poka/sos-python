@@ -192,8 +192,8 @@ class sos_Python:
                 response['data']['text/plain'])
 
         if to_kernel in ('Java', 'java', 'JAVA'):
-            javaCmd = ''
             if as_type == 'json':
+                javaCmd = ''
                 pythonVars = self.load_pickled(eval(response['data']['text/plain']))
                 try:
                     for varName in pythonVars:
@@ -201,6 +201,15 @@ class sos_Python:
                 except Exception as e:
                     self.sos_kernel.warn(f'Exception occurred when transferring `{varName}` from Python to {to_kernel}. {e.__str__()}')
                 return javaCmd
+            try:
+                ret = self.load_pickled(eval(response['data']['text/plain']))
+                if self.sos_kernel._debug_mode:
+                    self.sos_kernel.warn('Get: {}'.format(ret))
+                return ret
+            except Exception as e:
+                self.sos_kernel.warn('Failed to import variables {}: {}'.format(
+                    items, e))
+                return {}
         # Other kernels
         try:
             ret = self.load_pickled(eval(response['data']['text/plain']))
